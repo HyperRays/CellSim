@@ -1,11 +1,7 @@
-use state::App;
-use std::borrow::Cow;
-use winit::{
-    event::{Event, WindowEvent},
-    event_loop::{ControlFlow, EventLoop},
-    window::Window,
-};
+use winit::event_loop::{ControlFlow, EventLoop};
 
+mod app;
+mod renderdata;
 mod state;
 
 pub fn main() {
@@ -21,6 +17,6 @@ pub fn main() {
     // input, and uses significantly less power/CPU time than ControlFlow::Poll.
     event_loop.set_control_flow(ControlFlow::Wait);
 
-    let mut app = state::App::default();
+    let mut app = app::App::default();
     let _ = event_loop.run_app(&mut app);
 }
