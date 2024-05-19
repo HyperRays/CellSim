@@ -1,7 +1,10 @@
 use super::renderdata::*;
 use std::borrow::Cow;
 use std::sync::Arc;
-use wgpu::{core::instance, Adapter, Device, Instance, Queue, RenderPipeline, Surface};
+use wgpu::{
+    core::instance, naga::back::glsl::PushConstantItem, Adapter, Device, Instance,
+    PushConstantRange, Queue, RenderPipeline, ShaderStages, Surface, SurfaceConfiguration,
+};
 use winit::window::Window;
 
 pub struct State<'a> {
@@ -9,6 +12,7 @@ pub struct State<'a> {
     pub device: Device,
     pub render_pipeline: RenderPipeline,
     pub queue: Queue,
+    pub config: SurfaceConfiguration,
     pub vertex_buffer: wgpu::Buffer,
     pub index_buffer: wgpu::Buffer,
     pub index_len: usize,
@@ -18,7 +22,7 @@ pub struct State<'a> {
 
 impl<'a> State<'a> {
     async fn adapter(surface: &Surface<'a>, instance: &Instance) -> Adapter {
-        instance
+        let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions {
                 power_preference: wgpu::PowerPreference::default(),
                 force_fallback_adapter: false,
@@ -26,7 +30,12 @@ impl<'a> State<'a> {
                 compatible_surface: Some(surface),
             })
             .await
-            .expect("Failed to find an appropriate adapter")
+            .expect("Failed to find an appropriate adapter");
+
+        log::info!("Selected adapter: {:?}", adapter.get_info());
+        log::debug!("Push constant limit: {:?}", adapter.limits());
+
+        adapter
     }
 
     async fn device_queue(adapter: &Adapter) -> (Device, Queue) {
@@ -34,10 +43,13 @@ impl<'a> State<'a> {
             .request_device(
                 &wgpu::DeviceDescriptor {
                     label: None,
-                    required_features: wgpu::Features::empty(),
+                    required_features: wgpu::Features::PUSH_CONSTANTS,
                     // Make sure we use the texture resolution limits from the adapter, so we can support images the size of the swapchain.
-                    required_limits: wgpu::Limits::downlevel_webgl2_defaults()
-                        .using_resolution(adapter.limits()),
+                    required_limits: wgpu::Limits {
+                        max_push_constant_size: 8,
+                        ..wgpu::Limits::downlevel_webgl2_defaults()
+                            .using_resolution(adapter.limits())
+                    },
                 },
                 None,
             )
@@ -58,7 +70,10 @@ impl<'a> State<'a> {
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: None,
             bind_group_layouts: &[],
-            push_constant_ranges: &[],
+            push_constant_ranges: &[PushConstantRange {
+                range: 0..8,
+                stages: ShaderStages::VERTEX,
+            }],
         });
 
         let swapchain_capabilities = surface.get_capabilities(&adapter);
@@ -113,18 +128,34 @@ impl<'a> State<'a> {
         let index_buffer = create_idx(&device);
         let index_len = INDICES.len();
         let instance_buffer = create_inst(&device);
-        let instance_len = INSTANCES.len();
+        let instance_len = INSTCOUNT;
 
         Self {
             surface,
             device,
             render_pipeline,
             queue,
+            config,
             vertex_buffer,
             index_buffer,
             index_len,
             instance_buffer,
-            instance_len
+            instance_len,
+        }
+    }
+
+    pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
+        if new_size.width > 0 && new_size.height > 0 {
+            self.config.width = new_size.width;
+            self.config.height = new_size.height;
+            self.surface.configure(&self.device, &self.config);
+        }
+    }
+
+    pub fn update(&mut self) {
+        match update_inst_buffer(&self.device, &self.queue, &self.instance_buffer) {
+            Some(buffer) => {self.instance_buffer = buffer},
+            None => {}
         }
     }
 }

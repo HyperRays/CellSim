@@ -1,6 +1,8 @@
 use std::sync::Arc;
+use wgpu::ShaderStages;
 use winit::application::ApplicationHandler;
-use winit::event::WindowEvent;
+use winit::dpi::PhysicalSize;
+use winit::event::{self, WindowEvent};
 use winit::event_loop::ActiveEventLoop;
 use winit::window::{Window, WindowId};
 
@@ -34,6 +36,7 @@ impl<'a> ApplicationHandler for App<'a> {
 
             WindowEvent::RedrawRequested => {
                 let state = self.state.as_ref().unwrap();
+
                 let frame = state
                     .surface
                     .get_current_texture()
@@ -58,18 +61,40 @@ impl<'a> ApplicationHandler for App<'a> {
                         depth_stencil_attachment: None,
                         timestamp_writes: None,
                         occlusion_query_set: None,
-                    });
+                    }); 
                     rpass.set_pipeline(&state.render_pipeline);
+
+                    // set vertex and instance buffers
                     rpass.set_vertex_buffer(0, state.vertex_buffer.slice(..));
                     rpass.set_vertex_buffer(1, state.instance_buffer.slice(..));
+
+                    // Index buffer
                     rpass.set_index_buffer(state.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
+
+                    // pass window scale though push const.
+                    let size = <[f32; 2]>::from(self.window.as_ref().unwrap().inner_size());
+                    rpass.set_push_constants(ShaderStages::VERTEX, 0, bytemuck::cast_slice(&size));
+
                     rpass.draw_indexed(0..state.index_len as u32, 0, 0..state.instance_len as u32);
                 }
 
                 state.queue.submit(Some(encoder.finish()));
                 frame.present();
                 self.window.as_ref().unwrap().request_redraw();
+
+                // call update with state mut
+                self.state.as_mut().unwrap().update();
             }
+
+            WindowEvent::Resized(physical_size) => {
+                log::debug!("Window dimensions changed to: {:?}", physical_size);
+                self.state.as_mut().unwrap().resize(physical_size);
+            }
+
+            WindowEvent::ScaleFactorChanged { .. } => {
+                log::debug!("Resize event occured");
+            }
+
             _ => (),
         }
     }
