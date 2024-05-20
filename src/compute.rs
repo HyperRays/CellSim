@@ -41,11 +41,15 @@ impl Compute {
             compilation_options: Default::default(),
         });
 
+        log::debug!("Length: {:?}", create_grid_compute(GRID).len());
+
         let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor{
             label: Some("Compute Buffer"),
             contents: bytemuck::cast_slice(&create_grid_compute(GRID)),
             usage: wgpu::BufferUsages::STORAGE,
         });
+
+        log::debug!("Length of compute Buffer {:?}", buffer.size());
 
         let bind_group_layout = compute_pipeline.get_bind_group_layout(0);
         let compute_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {

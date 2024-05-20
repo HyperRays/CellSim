@@ -47,7 +47,7 @@ impl InstData {
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct ComputeData {
-    color: [f32; 3]
+    color: [f32; 4]
 }
 
 pub const VERTICES: &[Vertex] = &[
@@ -66,7 +66,7 @@ pub const VERTICES: &[Vertex] = &[
 ];
 
 pub const INDICES: &[u32] = &[0,1,2,0,2,3];
-pub const GRID: (u32,u32) = (50,50);
+pub const GRID: (u32,u32) = (100,100);
 pub const SIZE: f32 = 10.0;
 pub const INSTCOUNT: usize = (GRID.0*GRID.1) as usize;
 
@@ -97,11 +97,11 @@ pub fn create_grid_compute(grid: (u32,u32)) -> Vec<ComputeData> {
     let mut tmp = Vec::new();
     tmp.reserve_exact((grid.0*grid.1) as usize);
 
-    for x in 0..grid.0 {
-        for y in 0..grid.1 {
+    for _x in 0..grid.0 {
+        for _y in 0..grid.1 {
             tmp.push(
                 ComputeData {
-                    color: [1.0,1.0,1.0]
+                    color: [1.0,1.0,1.0,0.0]
                 }
             )
         }

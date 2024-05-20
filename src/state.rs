@@ -36,7 +36,7 @@ impl<'a> State<'a> {
             .expect("Failed to find an appropriate adapter");
 
         log::info!("Selected adapter: {:?}", adapter.get_info());
-        log::debug!("Push constant limit: {:?}", adapter.limits());
+        log::debug!("Push constant limit: {:?}", adapter.limits().max_push_constant_size);
 
         adapter
     }
