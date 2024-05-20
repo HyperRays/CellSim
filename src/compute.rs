@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use wgpu::{util::DeviceExt, BindGroup, Buffer, ComputePipeline, Device};
+use wgpu::{util::DeviceExt, BindGroup, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, Buffer, ComputePipeline, Device, PushConstantRange};
 
 use crate::renderdata::{create_grid_compute, GRID};
 
@@ -25,9 +25,54 @@ impl Compute {
             source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(include_str!("copy.wgsl"))),
         });
 
+        let compute_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: None,
+            bind_group_layouts: &[
+                &device.create_bind_group_layout(&BindGroupLayoutDescriptor{
+                    label: None,
+                    entries: &[BindGroupLayoutEntry{
+                        binding: 0,
+                        visibility: wgpu::ShaderStages::COMPUTE,
+                        count: None,
+                        ty: wgpu::BindingType::Buffer { ty: wgpu::BufferBindingType::Storage { read_only: false }, has_dynamic_offset: false, min_binding_size: None }
+                    }]
+                })
+            ],
+            push_constant_ranges: &[PushConstantRange {
+                range: 0..8,
+                stages: wgpu::ShaderStages::COMPUTE,
+            }],
+        });
+
+        let copy_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: None,
+            bind_group_layouts: &[
+                &device.create_bind_group_layout(&BindGroupLayoutDescriptor{
+                    label: None,
+                    entries: &[BindGroupLayoutEntry{
+                        binding: 0,
+                        visibility: wgpu::ShaderStages::COMPUTE,
+                        count: None,
+                        ty: wgpu::BindingType::Buffer { ty: wgpu::BufferBindingType::Storage { read_only: false }, has_dynamic_offset: false, min_binding_size: None }
+                    },
+                    BindGroupLayoutEntry{
+                        binding: 1,
+                        visibility: wgpu::ShaderStages::COMPUTE,
+                        count: None,
+                        ty: wgpu::BindingType::Buffer { ty: wgpu::BufferBindingType::Storage { read_only: false }, has_dynamic_offset: false, min_binding_size: None }
+                    }
+                    ]
+                })
+            ],
+            push_constant_ranges: &[PushConstantRange {
+                range: 0..8,
+                stages: wgpu::ShaderStages::COMPUTE,
+            }],
+        });
+
         let compute_pipeline = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
             label: Some("Compute pipeline"),
-            layout: None,
+            layout: Some(&compute_layout),
             module: &cs_module,
             entry_point: "main",
             compilation_options: Default::default(),
@@ -35,7 +80,7 @@ impl Compute {
 
         let copy_pipeline = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
             label: Some("Copy pipeline"),
-            layout: None,
+            layout: Some(&copy_layout),
             module: &copy_module,
             entry_point: "main",
             compilation_options: Default::default(),
