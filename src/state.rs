@@ -1,8 +1,10 @@
+use crate::compute::Compute;
+
 use super::renderdata::*;
 use std::borrow::Cow;
 use std::sync::Arc;
 use wgpu::{
-    core::instance, naga::back::glsl::PushConstantItem, Adapter, Device, Instance,
+    Adapter, Device, Instance,
     PushConstantRange, Queue, RenderPipeline, ShaderStages, Surface, SurfaceConfiguration,
 };
 use winit::window::Window;
@@ -18,6 +20,7 @@ pub struct State<'a> {
     pub index_len: usize,
     pub instance_buffer: wgpu::Buffer,
     pub instance_len: usize,
+    pub compute: Compute,
 }
 
 impl<'a> State<'a> {
@@ -47,7 +50,7 @@ impl<'a> State<'a> {
                     // Make sure we use the texture resolution limits from the adapter, so we can support images the size of the swapchain.
                     required_limits: wgpu::Limits {
                         max_push_constant_size: 8,
-                        ..wgpu::Limits::downlevel_webgl2_defaults()
+                        ..wgpu::Limits::downlevel_defaults()
                             .using_resolution(adapter.limits())
                     },
                 },
@@ -63,7 +66,7 @@ impl<'a> State<'a> {
     ) -> RenderPipeline {
         // Load the shaders from disk
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: None,
+            label: Some("main rendering shader"),
             source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(include_str!("shader.wgsl"))),
         });
 
@@ -129,6 +132,7 @@ impl<'a> State<'a> {
         let index_len = INDICES.len();
         let instance_buffer = create_inst(&device);
         let instance_len = INSTCOUNT;
+        let compute = Compute::new(&device, &instance_buffer);
 
         Self {
             surface,
@@ -141,6 +145,7 @@ impl<'a> State<'a> {
             index_len,
             instance_buffer,
             instance_len,
+            compute,
         }
     }
 
@@ -153,9 +158,9 @@ impl<'a> State<'a> {
     }
 
     pub fn update(&mut self) {
-        match update_inst_buffer(&self.device, &self.queue, &self.instance_buffer) {
-            Some(buffer) => {self.instance_buffer = buffer},
-            None => {}
-        }
+        // match update_inst_buffer(&self.device, &self.queue, &self.instance_buffer) {
+        //     Some(buffer) => {self.instance_buffer = buffer},
+        //     None => {}
+        // }
     }
 }

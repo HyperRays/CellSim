@@ -3,6 +3,7 @@ use winit::event_loop::{ControlFlow, EventLoop};
 mod app;
 mod renderdata;
 mod state;
+mod compute;
 
 pub fn main() {
     env_logger::init();

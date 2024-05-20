@@ -1,10 +1,12 @@
 use std::sync::Arc;
 use wgpu::ShaderStages;
 use winit::application::ApplicationHandler;
-use winit::dpi::PhysicalSize;
-use winit::event::{self, WindowEvent};
+
+use winit::event::{WindowEvent};
 use winit::event_loop::ActiveEventLoop;
 use winit::window::{Window, WindowId};
+
+use crate::renderdata::GRID;
 
 use super::state::*;
 
@@ -47,6 +49,30 @@ impl<'a> ApplicationHandler for App<'a> {
                 let mut encoder = state
                     .device
                     .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+                {
+                    let mut cpass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor{
+                        label: Some("Compute Pass 0"),
+                        timestamp_writes: None,
+                    });
+
+                    cpass.set_pipeline(&state.compute.cs_pipeline);
+                    cpass.set_bind_group(0, &state.compute.compute_bind_group, &[]);
+                    cpass.insert_debug_marker("use compute shader");
+                    cpass.dispatch_workgroups(GRID.0*GRID.1, 1, 1);
+                }
+
+                {
+                    let mut cpass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor{
+                        label: Some("Compute Pass 1"),
+                        timestamp_writes: None,
+                    });
+
+                    cpass.set_pipeline(&state.compute.copy_pipeline);
+                    cpass.set_bind_group(0, &state.compute.copy_bind_group, &[]);
+                    cpass.insert_debug_marker("copy to instance buffer");
+                    cpass.dispatch_workgroups(GRID.0*GRID.1, 1, 1);
+                }
+
                 {
                     let mut rpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                         label: Some("Render Pass 0"),

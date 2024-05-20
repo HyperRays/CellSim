@@ -8,9 +8,9 @@ struct VertexInput {
 };
 
 struct InstanceInput {
-    @location(1) inst_pos: vec3<f32>,
-    @location(2) color: vec3<f32>,
-    @location(3) scale: f32,
+    @location(1) inst_pos: vec4<f32>,
+    @location(2) color: vec4<f32>,
+    @location(3) scale: vec4<f32>,
 }
 
 struct VertexOutput {
@@ -24,12 +24,12 @@ fn vs_main(
     inst: InstanceInput
 ) -> VertexOutput {
     var out: VertexOutput;
-    out.color = inst.color;
+    out.color = inst.color.xyz;
 
     // scale the points to have physical window size
-    var scaled_points = (model.position)*inst.scale;
+    var scaled_points = (model.position)*inst.scale.x;
     //shift the points according to instance postion
-    var shifted = (scaled_points + inst.inst_pos);
+    var shifted = (scaled_points + inst.inst_pos.xyz);
     //scale the points back to 1.0/-1.0 to fit in viewport
     var normalised = shifted/vec3<f32>(scale, 1.0);
     // shift entire screen, so that the top left corner is 0,0

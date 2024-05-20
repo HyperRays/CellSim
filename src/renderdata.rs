@@ -24,14 +24,14 @@ impl Vertex {
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct InstData {
-    position: [f32; 3],
-    color: [f32; 3],
-    scale: f32,
+    position: [f32; 4],
+    color: [f32; 4],
+    scale: [f32; 4],
 }
 
 impl InstData {
     const ATTRIBS: [wgpu::VertexAttribute; 3] =
-        wgpu::vertex_attr_array![1 => Float32x3, 2 => Float32x3, 3 => Float32];
+        wgpu::vertex_attr_array![1 => Float32x4, 2 => Float32x4, 3 => Float32x4];
 
     pub fn desc() -> wgpu::VertexBufferLayout<'static> {
         use std::mem;
@@ -42,6 +42,12 @@ impl InstData {
             attributes: &Self::ATTRIBS,
         }
     }
+}
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
+pub struct ComputeData {
+    color: [f32; 3]
 }
 
 pub const VERTICES: &[Vertex] = &[
@@ -60,7 +66,7 @@ pub const VERTICES: &[Vertex] = &[
 ];
 
 pub const INDICES: &[u32] = &[0,1,2,0,2,3];
-pub const GRID: (u32,u32) = (100,100);
+pub const GRID: (u32,u32) = (50,50);
 pub const SIZE: f32 = 10.0;
 pub const INSTCOUNT: usize = (GRID.0*GRID.1) as usize;
 
@@ -70,15 +76,32 @@ pub fn create_grid(grid: (u32,u32), size: f32) -> Vec<InstData> {
     
     let mut tmp: Vec<InstData> = Vec::new();
     tmp.reserve_exact((grid.0*grid.1) as usize);
-    let mut rng = rand::thread_rng();
 
     for x in 0..grid.0 {
         for y in 0..grid.1 {
             tmp.push(
                 InstData {
-                    position: [x as f32 *size, y as f32*-size, 0.0],
-                    color:  rng.gen(),
-                    scale: size,
+                    position: [x as f32 * size, y as f32 * -size, 0.0, /*padding*/0.0],
+                    color:  [0.0,0.0,1.0,/*padding*/0.0],
+                    scale: [size,/*padding*/0.0,0.0,0.0],
+                }
+            )
+        }
+    }
+
+    tmp
+}
+
+pub fn create_grid_compute(grid: (u32,u32)) -> Vec<ComputeData> {
+    
+    let mut tmp = Vec::new();
+    tmp.reserve_exact((grid.0*grid.1) as usize);
+
+    for x in 0..grid.0 {
+        for y in 0..grid.1 {
+            tmp.push(
+                ComputeData {
+                    color: [1.0,1.0,1.0]
                 }
             )
         }
@@ -107,28 +130,6 @@ pub fn create_inst(device: &Device) -> Buffer {
     device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
         label: Some("Instance Buffer"),
         contents: bytemuck::cast_slice(&create_grid(GRID, SIZE)),
-        usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
+        usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::STORAGE,
     })
-}
-
-pub fn update_inst_buffer(device: &Device, queue: &Queue, buffer: &Buffer) -> Option<Buffer> {
-    
-    let data = create_grid(GRID, SIZE);
-    let raw_data = bytemuck::cast_slice(&data);
-
-    // create a new buffer if the provided one is too small
-    if raw_data.len() as u64 > buffer.size() {
-        Some(device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Instance Buffer"),
-            contents: raw_data,
-            usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
-        }))
-    } else {
-        queue.write_buffer(
-            buffer,
-            0,
-            raw_data,
-        );
-        None
-    }
 }
