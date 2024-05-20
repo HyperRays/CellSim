@@ -157,10 +157,5 @@ impl<'a> State<'a> {
         }
     }
 
-    pub fn update(&mut self) {
-        // match update_inst_buffer(&self.device, &self.queue, &self.instance_buffer) {
-        //     Some(buffer) => {self.instance_buffer = buffer},
-        //     None => {}
-        // }
-    }
+    pub fn update(&mut self) {}
 }

@@ -21,17 +21,18 @@ impl Vertex {
     }
 }
 
-#[repr(C)]
+#[repr(C, align(16))]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct InstData {
-    position: [f32; 4],
-    color: [f32; 4],
-    scale: [f32; 4],
+    position: [f32; 3],
+    scale: f32,
+    color: [f32; 3],
+    _pad: u32,
 }
 
 impl InstData {
-    const ATTRIBS: [wgpu::VertexAttribute; 3] =
-        wgpu::vertex_attr_array![1 => Float32x4, 2 => Float32x4, 3 => Float32x4];
+    const ATTRIBS: [wgpu::VertexAttribute; 4] =
+        wgpu::vertex_attr_array![1 => Float32x3, 2 => Float32, 3 => Float32x3, 4 => Uint32];
 
     pub fn desc() -> wgpu::VertexBufferLayout<'static> {
         use std::mem;
@@ -44,10 +45,11 @@ impl InstData {
     }
 }
 
-#[repr(C)]
+#[repr(C, align(16))]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct ComputeData {
-    color: [f32; 4]
+    color: [f32; 3],
+    state: u32,
 }
 
 pub const VERTICES: &[Vertex] = &[
@@ -76,14 +78,16 @@ pub fn create_grid(grid: (u32,u32), size: f32) -> Vec<InstData> {
     
     let mut tmp: Vec<InstData> = Vec::new();
     tmp.reserve_exact((grid.0*grid.1) as usize);
+    let mut rng = rand::thread_rng();
 
     for x in 0..grid.0 {
         for y in 0..grid.1 {
             tmp.push(
                 InstData {
-                    position: [x as f32 * size, y as f32 * -size, 0.0, /*padding*/0.0],
-                    color:  [0.0,0.0,1.0,/*padding*/0.0],
-                    scale: [size,/*padding*/0.0,0.0,0.0],
+                    position: [x as f32 * size, y as f32 * -size, 0.0],
+                    color:  rng.gen(),
+                    scale: size,
+                    _pad: 0,
                 }
             )
         }
@@ -101,7 +105,8 @@ pub fn create_grid_compute(grid: (u32,u32)) -> Vec<ComputeData> {
         for _y in 0..grid.1 {
             tmp.push(
                 ComputeData {
-                    color: [1.0,1.0,1.0,0.0]
+                    color: [1.0,1.0,1.0],
+                    state: 0,
                 }
             )
         }
