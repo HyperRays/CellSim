@@ -15,8 +15,8 @@ fn get_idx(pos: vec2<u32>) -> u32{
 }
 
 fn check_bounds(pos: vec2<u32>) -> bool {
-    let x = (pos.x < grid.x) & (pos.x >= 0);
-    let y = (pos.y < grid.y) & (pos.y >= 0);
+    let x = (pos.x < grid.x) & (pos.x >= u32(0));
+    let y = (pos.y < grid.y) & (pos.y >= u32(0));
     return x & y;
 }
 
@@ -39,46 +39,61 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>){
                                         check_bounds(neighbors[3]));
 
 
-    v_indices[idx].copy = cell.state;
+    // v_indices[idx].copy = cell.state;
 
-    // if cell.state == 200 {
-        // var ill_neigh: u32 = 0;
-        // var uill_neigh: u32 = 0;
-        // var sum_neigh: u32 = 0;
+    if cell.state == 200 {
+        v_indices[idx].copy = u32(0); 
+    } else {
+        var ill_neigh: u32 = u32(0);
+        var uill_neigh: u32 = u32(0);
+        var sum_neigh: u32 = u32(0);
 
-        // if in_bounds[0] { 
-        //     let neigh_val = v_indices[get_idx(neighbors[0])].state;
-        //     ill_neigh += u32(neigh_val > 0 & neigh_val < 200);
-        //     uill_neigh += u32(neigh_val == 200);     
-        //     sum_neigh += neigh_val;
-        // }
-        // if in_bounds[1] { 
-        //     let neigh_val = v_indices[get_idx(neighbors[1])].state;
-        //     ill_neigh += u32(neigh_val > 0 & neigh_val < 200);     
-        //     uill_neigh += u32(neigh_val == 200);
-        //     sum_neigh += neigh_val;
-        // }
-        // if in_bounds[2] { 
-        //     let neigh_val = v_indices[get_idx(neighbors[2])].state;
-        //     ill_neigh += u32(neigh_val > 0 & neigh_val < 200);    
-        //     uill_neigh += u32(neigh_val == 200); 
-        //     sum_neigh += neigh_val;
-        // }
-        // if in_bounds[3] { 
-        //     let neigh_val = v_indices[get_idx(neighbors[3])].state;
-        //     ill_neigh += u32(neigh_val > 0 & neigh_val < 200); 
-        //     uill_neigh += u32(neigh_val == 200); 
-        //     sum_neigh += neigh_val;
-        // }
+        if in_bounds[0] { 
+        {
+        let neigh_val = v_indices[get_idx(neighbors[0])].state;
+        ill_neigh += u32((neigh_val > 0) & (neigh_val < 200)); 
+        uill_neigh += u32(neigh_val == 200);     
+        sum_neigh = neigh_val;
+        }
+        }
+        if in_bounds[1] { 
+        {
+        let neigh_val = v_indices[get_idx(neighbors[1])].state;
+        ill_neigh += u32((neigh_val > 0) & (neigh_val < 200));      
+        uill_neigh += u32(neigh_val == 200);
+        sum_neigh += neigh_val;
+        }
+        }
+        if in_bounds[2] { 
+        {
+        let neigh_val = v_indices[get_idx(neighbors[2])].state;
+        ill_neigh += u32((neigh_val > 0) & (neigh_val < 200));  
+        uill_neigh += u32(neigh_val == 200); 
+        sum_neigh += neigh_val;
+        }
+        }
+        if in_bounds[3] { 
+        {
+        let neigh_val = v_indices[get_idx(neighbors[3])].state;
+        ill_neigh += u32((neigh_val > 0) & (neigh_val < 200)); 
+        uill_neigh += u32(neigh_val == 200); 
+        sum_neigh += neigh_val;
+        }
+        }
 
-        // var new_state: u32 = ill_neigh / 3 + uill_neigh / 3;
-        // let s = new_state + sum_neigh;
-        // new_state = (s / (ill_neigh + uill_neigh + 1)) + 42;
-        // if new_state > 200 {
-        //     new_state = u32(200);
-        // }
+        var new_state: u32 = u32(0);
+        if cell.state == 0 {
+            new_state = u32(ill_neigh / 1) + u32(uill_neigh / 1);
+        } else {
+            let s = cell.state + sum_neigh;
+            new_state = u32(f32(s) / f32(ill_neigh + uill_neigh + 1)) + 42;
+        }
+
+        if new_state > 200 {
+            new_state = u32(200);
+        }
         
-        // v_indices[idx].copy = new_state; 
+        v_indices[idx].copy = new_state; 
 
-    // }
+    }
 }

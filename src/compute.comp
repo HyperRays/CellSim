@@ -1,0 +1,71 @@
+#version 310 es
+
+precision highp float;
+precision highp int;
+
+layout(local_size_x = 10, local_size_y = 10, local_size_z = 1) in;
+
+struct Comp {
+    uint state;
+    uint copy;
+    uvec2 _pad;
+};
+uniform uvec2 _push_constant_binding_cs;
+
+layout(std430) buffer type_2_block_0Compute { Comp _group_0_binding_0_cs[]; };
+
+
+uint get_idx(uvec2 pos) {
+    uint _e5 = _push_constant_binding_cs.x;
+    return (pos.x + (pos.y * _e5));
+}
+
+bool check_bounds(uvec2 pos_1) {
+    uint _e4 = _push_constant_binding_cs.x;
+    bool x = ((pos_1.x < _e4) && (pos_1.x >= 0u));
+    uint _e13 = _push_constant_binding_cs.y;
+    bool y = ((pos_1.y < _e13) && (pos_1.y >= 0u));
+    return (x && y);
+}
+
+void main() {
+    uvec3 global_id = gl_GlobalInvocationID;
+    uint ill_neigh = 0u;
+    uint uill_neigh = 0u;
+    uint sum_neigh = 0u;
+    uint new_state = 0u;
+    uint _e2 = get_idx(global_id.xy);
+    Comp cell = _group_0_binding_0_cs[_e2];
+    uvec2 neighbors[4] = uvec2[4](uvec2(global_id.x, (global_id.y + 1u)), uvec2((global_id.x + 1u), global_id.y), uvec2(global_id.x, (global_id.y - 1u)), uvec2((global_id.x - 1u), global_id.y));
+    bool _e28 = check_bounds(neighbors[0]);
+    bool _e30 = check_bounds(neighbors[1]);
+    bool _e32 = check_bounds(neighbors[2]);
+    bool _e34 = check_bounds(neighbors[3]);
+    bool in_bounds[4] = bool[4](_e28, _e30, _e32, _e34);
+    if ((cell.state == 200u)) {
+        _group_0_binding_0_cs[_e2].copy = 0u;
+        return;
+    } else {
+        uint neigh_val = _group_0_binding_0_cs[0].state;
+        ill_neigh = uint(((neigh_val > 0u) && (neigh_val < 200u)));
+        uill_neigh = uint((neigh_val == 200u));
+        sum_neigh = neigh_val;
+        uint _e62 = ill_neigh;
+        uint _e67 = uill_neigh;
+        new_state = (uint((float(_e62) / 3.0)) + uint((float(_e67) / 3.0)));
+        uint _e74 = new_state;
+        uint _e75 = sum_neigh;
+        uint s = (_e74 + _e75);
+        uint _e78 = ill_neigh;
+        uint _e79 = uill_neigh;
+        new_state = (uint((float(s) / float(((_e78 + _e79) + 1u)))) + 42u);
+        uint _e88 = new_state;
+        if ((_e88 > 200u)) {
+            new_state = 200u;
+        }
+        uint _e95 = new_state;
+        _group_0_binding_0_cs[_e2].copy = _e95;
+        return;
+    }
+}
+
