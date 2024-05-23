@@ -60,7 +60,7 @@ impl<'a> ApplicationHandler for App<'a> {
                     cpass.set_bind_group(0, &state.compute.compute_bind_group, &[]);
                     cpass.set_push_constants(0, bytemuck::cast_slice(&[GRID.0,GRID.1]));
                     cpass.insert_debug_marker("use compute shader");
-                    cpass.dispatch_workgroups(GRID.0*GRID.1, 1, 1);
+                    cpass.dispatch_workgroups(GRID.0, GRID.1, 1);
                 }
 
                 {
@@ -73,7 +73,7 @@ impl<'a> ApplicationHandler for App<'a> {
                     cpass.set_bind_group(0, &state.compute.copy_bind_group, &[]);
                     cpass.set_push_constants(0, bytemuck::cast_slice(&[GRID.0,GRID.1]));
                     cpass.insert_debug_marker("copy to instance buffer");
-                    cpass.dispatch_workgroups(GRID.0*GRID.1, 1, 1);
+                    cpass.dispatch_workgroups(GRID.0, GRID.1, 1);
                 }
 
                 {

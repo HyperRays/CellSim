@@ -48,8 +48,9 @@ impl InstData {
 #[repr(C, align(16))]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct ComputeData {
-    color: [f32; 3],
     state: u32,
+    copy: u32,
+    _pad: [u32; 2]
 }
 
 pub const VERTICES: &[Vertex] = &[
@@ -69,7 +70,7 @@ pub const VERTICES: &[Vertex] = &[
 
 pub const INDICES: &[u32] = &[0,1,2,0,2,3];
 pub const GRID: (u32,u32) = (100,100);
-pub const SIZE: f32 = 10.0;
+pub const SIZE: f32 = 20.0;
 pub const INSTCOUNT: usize = (GRID.0*GRID.1) as usize;
 
 
@@ -78,14 +79,13 @@ pub fn create_grid(grid: (u32,u32), size: f32) -> Vec<InstData> {
     
     let mut tmp: Vec<InstData> = Vec::new();
     tmp.reserve_exact((grid.0*grid.1) as usize);
-    let mut rng = rand::thread_rng();
 
     for x in 0..grid.0 {
         for y in 0..grid.1 {
             tmp.push(
                 InstData {
                     position: [x as f32 * size, y as f32 * -size, 0.0],
-                    color:  rng.gen(),
+                    color:  [0.0,0.0,0.0],
                     scale: size,
                     _pad: 0,
                 }
@@ -100,13 +100,15 @@ pub fn create_grid_compute(grid: (u32,u32)) -> Vec<ComputeData> {
     
     let mut tmp = Vec::new();
     tmp.reserve_exact((grid.0*grid.1) as usize);
+    let mut rng = rand::thread_rng();
 
     for _x in 0..grid.0 {
         for _y in 0..grid.1 {
             tmp.push(
                 ComputeData {
-                    color: [1.0,1.0,1.0],
-                    state: 0,
+                    state: rng.gen_range(0..=200),
+                    copy: rng.gen_range(0..=200),
+                    _pad: Default::default(),
                 }
             )
         }

@@ -1,8 +1,9 @@
 var<push_constant> grid: vec2<u32>;
 
 struct Comp {
-    color: vec3<f32>,
     state: u32,
+    copy: u32,
+    _pad: vec2<u32>,
 }   
 
 @group(0)
@@ -22,11 +23,14 @@ struct InstanceInput {
 var<storage, read_write> instances: array<InstanceInput>; 
 
 
+fn get_idx(x: u32,y: u32) -> u32{
+    return x + y * grid.x;
+}
+
 @compute
 @workgroup_size(1,1,1)
 fn main(@builtin(global_invocation_id) global_id: vec3<u32>){
-    let idx = global_id.x + global_id.y;
-    instances[idx].color.x = v_indices[idx].color.x;
-    instances[idx].color.y = v_indices[idx].color.y;
-    instances[idx].color.z = v_indices[idx].color.z;
+    let idx = get_idx(global_id.x,global_id.y);
+    instances[idx].color = vec3<f32>(0.0,0.0,f32(200/v_indices[idx].copy));
+    v_indices[idx].state = v_indices[idx].copy;
 }
