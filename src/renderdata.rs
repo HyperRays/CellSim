@@ -69,7 +69,7 @@ pub const VERTICES: &[Vertex] = &[
 ];
 
 pub const INDICES: &[u32] = &[0,1,2,0,2,3];
-pub const GRID: (u32,u32) = (100,100);
+pub const GRID: (u32,u32) = (50,50);
 pub const SIZE: f32 = 20.0;
 pub const INSTCOUNT: usize = (GRID.0*GRID.1) as usize;
 

@@ -31,6 +31,6 @@ fn get_idx(x: u32,y: u32) -> u32{
 @workgroup_size(1,1,1)
 fn main(@builtin(global_invocation_id) global_id: vec3<u32>){
     let idx = get_idx(global_id.x,global_id.y);
-    instances[idx].color = vec3<f32>(0.0,0.0,200/f32(v_indices[idx].copy));
+    instances[idx].color = vec3<f32>(0.4,0,0.8) * 1.0/200.0 * f32(v_indices[idx].copy);
     v_indices[idx].state = v_indices[idx].copy;
 }

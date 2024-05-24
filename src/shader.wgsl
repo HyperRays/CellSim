@@ -25,7 +25,7 @@ fn vs_main(
     inst: InstanceInput
 ) -> VertexOutput {
     var out: VertexOutput;
-    out.color = inst.color.xyz;
+    out.color = inst.color;
 
     // scale the points to have physical window size
     var scaled_points = (model.position)*inst.scale;

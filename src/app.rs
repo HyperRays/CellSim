@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::{thread, time};
 use bytemuck::bytes_of;
 use wgpu::ShaderStages;
 use winit::application::ApplicationHandler;
@@ -113,6 +114,8 @@ impl<'a> ApplicationHandler for App<'a> {
 
                 // call update with state mut
                 self.state.as_mut().unwrap().update();
+                let time = time::Duration::from_millis(60);
+                thread::sleep(time);
             }
 
             WindowEvent::Resized(physical_size) => {
