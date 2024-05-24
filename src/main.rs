@@ -14,7 +14,9 @@ pub fn main() {
     // ControlFlow::Poll continuously runs the event loop, even if the OS hasn't
     // dispatched any events. This is ideal for games and similar applications.
     event_loop.set_control_flow(ControlFlow::Poll);
+    let mut builder = winit::window::WindowBuilder::new();
+    let window = builder.build(&event_loop).unwrap();
 
     let mut app = app::App::default();
-    let _ = event_loop.run_app(&mut app);
+    pollster::block_on(app.run(event_loop, window));
 }

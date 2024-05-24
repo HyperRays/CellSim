@@ -2,10 +2,9 @@ use std::sync::Arc;
 use std::{thread, time};
 use bytemuck::bytes_of;
 use wgpu::ShaderStages;
-use winit::application::ApplicationHandler;
 
-use winit::event::{WindowEvent};
-use winit::event_loop::ActiveEventLoop;
+use winit::event::{Event, WindowEvent};
+use winit::event_loop::{self, EventLoop, EventLoopWindowTarget};
 use winit::window::{Window, WindowId};
 
 use crate::renderdata::GRID;
@@ -18,20 +17,14 @@ pub struct App<'a> {
     pub state: Option<State<'a>>,
 }
 
-impl<'a> ApplicationHandler for App<'a> {
-    fn resumed(&mut self, event_loop: &ActiveEventLoop) {
-        self.window = Some(Arc::new(
-            event_loop
-                .create_window(Window::default_attributes())
-                .unwrap(),
-        ));
-
-        self.state = Some(pollster::block_on(State::new(
+impl<'a> App<'a> {
+    async fn resumed(&mut self) {
+        self.state = Some(State::new(
             (&self).window.as_ref().unwrap().clone(),
-        )));
+        ).await);
     }
 
-    fn window_event(&mut self, event_loop: &ActiveEventLoop, _id: WindowId, event: WindowEvent) {
+    fn window_event(&mut self, event: WindowEvent, event_loop: &EventLoopWindowTarget<()>) {
         match event {
             WindowEvent::CloseRequested => {
                 log::info!("The close button was pressed; stopping");
@@ -129,5 +122,19 @@ impl<'a> ApplicationHandler for App<'a> {
 
             _ => (),
         }
+    }
+
+    pub async fn run(mut self, event_loop: EventLoop<()>, window: Window){
+        self.window = Some(Arc::new(window));
+        self.resumed().await;
+        
+        let _ = event_loop.run(move |event, target| {
+            if let Event::WindowEvent {
+                window_id: _,
+                event,
+            } = event {
+                self.window_event(event, &target);
+            }
+        });
     }
 }
