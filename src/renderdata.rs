@@ -50,7 +50,7 @@ impl InstData {
 pub struct ComputeData {
     state: u32,
     copy: u32,
-    _pad: [u32; 2]
+    _pad: [u32; 2],
 }
 
 pub const VERTICES: &[Vertex] = &[
@@ -68,49 +68,41 @@ pub const VERTICES: &[Vertex] = &[
     },
 ];
 
-pub const INDICES: &[u32] = &[0,1,2,0,2,3];
-pub const GRID: (u32,u32) = (1000,1000);
+pub const INDICES: &[u32] = &[0, 1, 2, 0, 2, 3];
+pub const GRID: (u32, u32) = (1000, 1000);
 pub const SIZE: f32 = 2.0;
-pub const INSTCOUNT: usize = (GRID.0*GRID.1) as usize;
+pub const INSTCOUNT: usize = (GRID.0 * GRID.1) as usize;
 
-
-
-pub fn create_grid(grid: (u32,u32), size: f32) -> Vec<InstData> {
-    
+pub fn create_grid(grid: (u32, u32), size: f32) -> Vec<InstData> {
     let mut tmp: Vec<InstData> = Vec::new();
-    tmp.reserve_exact((grid.0*grid.1) as usize);
+    tmp.reserve_exact((grid.0 * grid.1) as usize);
 
     for x in 0..grid.0 {
         for y in 0..grid.1 {
-            tmp.push(
-                InstData {
-                    position: [x as f32 * size, y as f32 * -size, 0.0],
-                    color:  [0.0,0.0,0.0],
-                    scale: size,
-                    _pad: 0,
-                }
-            )
+            tmp.push(InstData {
+                position: [x as f32 * size, y as f32 * -size, 0.0],
+                color: [0.0, 0.0, 0.0],
+                scale: size,
+                _pad: 0,
+            })
         }
     }
 
     tmp
 }
 
-pub fn create_grid_compute(grid: (u32,u32)) -> Vec<ComputeData> {
-    
+pub fn create_grid_compute(grid: (u32, u32)) -> Vec<ComputeData> {
     let mut tmp = Vec::new();
-    tmp.reserve_exact((grid.0*grid.1) as usize);
+    tmp.reserve_exact((grid.0 * grid.1) as usize);
     let mut rng = rand::thread_rng();
 
     for _x in 0..grid.0 {
         for _y in 0..grid.1 {
-            tmp.push(
-                ComputeData {
-                    state: rng.gen_range(0..=200),
-                    copy: rng.gen_range(0..=200),
-                    _pad: Default::default(),
-                }
-            )
+            tmp.push(ComputeData {
+                state: rng.gen_range(0..=200),
+                copy: rng.gen_range(0..=200),
+                _pad: Default::default(),
+            })
         }
     }
 
@@ -137,6 +129,8 @@ pub fn create_inst(device: &Device) -> Buffer {
     device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
         label: Some("Instance Buffer"),
         contents: bytemuck::cast_slice(&create_grid(GRID, SIZE)),
-        usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::STORAGE,
+        usage: wgpu::BufferUsages::VERTEX
+            | wgpu::BufferUsages::COPY_DST
+            | wgpu::BufferUsages::STORAGE,
     })
 }

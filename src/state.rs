@@ -4,8 +4,8 @@ use super::renderdata::*;
 use std::borrow::Cow;
 use std::sync::Arc;
 use wgpu::{
-    Adapter, Device, Instance,
-    PushConstantRange, Queue, RenderPipeline, ShaderStages, Surface, SurfaceConfiguration,
+    Adapter, Device, Instance, PushConstantRange, Queue, RenderPipeline, ShaderStages, Surface,
+    SurfaceConfiguration,
 };
 use winit::window::Window;
 
@@ -36,7 +36,10 @@ impl<'a> State<'a> {
             .expect("Failed to find an appropriate adapter");
 
         log::info!("Selected adapter: {:?}", adapter.get_info());
-        log::debug!("Push constant limit: {:?}", adapter.limits().max_push_constant_size);
+        log::debug!(
+            "Push constant limit: {:?}",
+            adapter.limits().max_push_constant_size
+        );
 
         adapter
     }
@@ -50,8 +53,7 @@ impl<'a> State<'a> {
                     // Make sure we use the texture resolution limits from the adapter, so we can support images the size of the swapchain.
                     required_limits: wgpu::Limits {
                         max_push_constant_size: 8,
-                        ..wgpu::Limits::downlevel_defaults()
-                            .using_resolution(adapter.limits())
+                        ..wgpu::Limits::downlevel_defaults().using_resolution(adapter.limits())
                     },
                 },
                 None,

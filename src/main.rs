@@ -3,9 +3,9 @@ use std::time::Instant;
 use winit::event_loop::{ControlFlow, EventLoop};
 
 mod app;
+mod compute;
 mod renderdata;
 mod state;
-mod compute;
 
 pub fn main() {
     env_logger::init();

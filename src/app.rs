@@ -1,6 +1,6 @@
+use bytemuck::bytes_of;
 use std::sync::Arc;
 use std::{thread, time};
-use bytemuck::bytes_of;
 use wgpu::ShaderStages;
 
 use winit::event::{Event, WindowEvent};
@@ -19,9 +19,7 @@ pub struct App<'a> {
 
 impl<'a> App<'a> {
     async fn resumed(&mut self) {
-        self.state = Some(State::new(
-            (&self).window.as_ref().unwrap().clone(),
-        ).await);
+        self.state = Some(State::new((&self).window.as_ref().unwrap().clone()).await);
     }
 
     fn window_event(&mut self, event: WindowEvent, event_loop: &EventLoopWindowTarget<()>) {
@@ -45,27 +43,27 @@ impl<'a> App<'a> {
                     .device
                     .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
                 {
-                    let mut cpass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor{
+                    let mut cpass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
                         label: Some("Compute Pass 0"),
                         timestamp_writes: None,
                     });
 
                     cpass.set_pipeline(&state.compute.cs_pipeline);
                     cpass.set_bind_group(0, &state.compute.compute_bind_group, &[]);
-                    cpass.set_push_constants(0, bytemuck::cast_slice(&[GRID.0,GRID.1]));
+                    cpass.set_push_constants(0, bytemuck::cast_slice(&[GRID.0, GRID.1]));
                     cpass.insert_debug_marker("use compute shader");
                     cpass.dispatch_workgroups(GRID.0, GRID.1, 1);
                 }
 
                 {
-                    let mut cpass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor{
+                    let mut cpass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
                         label: Some("Compute Pass 1"),
                         timestamp_writes: None,
                     });
 
                     cpass.set_pipeline(&state.compute.copy_pipeline);
                     cpass.set_bind_group(0, &state.compute.copy_bind_group, &[]);
-                    cpass.set_push_constants(0, bytemuck::cast_slice(&[GRID.0,GRID.1]));
+                    cpass.set_push_constants(0, bytemuck::cast_slice(&[GRID.0, GRID.1]));
                     cpass.insert_debug_marker("copy to instance buffer");
                     cpass.dispatch_workgroups(GRID.0, GRID.1, 1);
                 }
@@ -84,7 +82,7 @@ impl<'a> App<'a> {
                         depth_stencil_attachment: None,
                         timestamp_writes: None,
                         occlusion_query_set: None,
-                    }); 
+                    });
                     rpass.set_pipeline(&state.render_pipeline);
 
                     // set vertex and instance buffers
@@ -124,15 +122,16 @@ impl<'a> App<'a> {
         }
     }
 
-    pub async fn run(mut self, event_loop: EventLoop<()>, window: Window){
+    pub async fn run(mut self, event_loop: EventLoop<()>, window: Window) {
         self.window = Some(Arc::new(window));
         self.resumed().await;
-        
+
         let _ = event_loop.run(move |event, target| {
             if let Event::WindowEvent {
                 window_id: _,
                 event,
-            } = event {
+            } = event
+            {
                 self.window_event(event, &target);
             }
         });
