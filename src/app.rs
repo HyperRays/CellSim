@@ -79,6 +79,9 @@ impl<'a> App<'a> {
                             ui.add(egui::DragValue::new(&mut state.compute.var[1]));
                             ui.label("g");
                             ui.add(egui::DragValue::new(&mut state.compute.var[2]));
+                            if ui.add(egui::Button::new("Reset")).clicked() {
+                                state.compute.reset(&state.queue);
+                            }
                         });
                     },
                 );

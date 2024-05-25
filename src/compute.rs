@@ -1,5 +1,7 @@
 use std::borrow::Cow;
 
+use wgpu::core::device;
+use wgpu::Queue;
 use wgpu::{
     util::DeviceExt, BindGroup, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry,
     Buffer, CommandEncoder, ComputePipeline, Device, PushConstantRange, TextureView,
@@ -112,7 +114,7 @@ impl Compute {
         let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Compute Buffer"),
             contents: bytemuck::cast_slice(&create_grid_compute(GRID)),
-            usage: wgpu::BufferUsages::STORAGE,
+            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
         });
 
         log::debug!("Length of compute Buffer {:?}", buffer.size());
@@ -186,4 +188,8 @@ impl Compute {
             self.time = now;
         }
     }
+
+    pub fn reset(&self,queue: &Queue) {
+        queue.write_buffer(&self.compute_buffer, 0, bytemuck::cast_slice(&create_grid_compute(GRID)));
+    }   
 }
