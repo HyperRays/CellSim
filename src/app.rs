@@ -1,4 +1,5 @@
 use bytemuck::bytes_of;
+use std::borrow::{BorrowMut, Cow};
 use std::sync::Arc;
 use std::{thread, time};
 use wgpu::ShaderStages;
@@ -15,7 +16,9 @@ use super::state::*;
 pub struct App<'a> {
     pub window: Option<Arc<Window>>,
     pub state: Option<State<'a>>,
+    counter: i32,
 }
+
 
 impl<'a> App<'a> {
     async fn resumed(&mut self) {
@@ -23,6 +26,13 @@ impl<'a> App<'a> {
     }
 
     fn window_event(&mut self, event: WindowEvent, event_loop: &EventLoopWindowTarget<()>) {
+        let _ = self
+            .state
+            .as_mut()
+            .unwrap()
+            .egui_renderer
+            .handle_input(self.window.as_ref().unwrap(), &event);
+
         match event {
             WindowEvent::CloseRequested => {
                 log::info!("The close button was pressed; stopping");
@@ -30,7 +40,7 @@ impl<'a> App<'a> {
             }
 
             WindowEvent::RedrawRequested => {
-                let state = self.state.as_ref().unwrap();
+                let state = self.state.as_mut().unwrap();
 
                 let frame = state
                     .surface
@@ -42,62 +52,36 @@ impl<'a> App<'a> {
                 let mut encoder = state
                     .device
                     .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
-                {
-                    let mut cpass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
-                        label: Some("Compute Pass 0"),
-                        timestamp_writes: None,
-                    });
 
-                    cpass.set_pipeline(&state.compute.cs_pipeline);
-                    cpass.set_bind_group(0, &state.compute.compute_bind_group, &[]);
-                    cpass.set_push_constants(0, bytemuck::cast_slice(&[GRID.0, GRID.1]));
-                    cpass.insert_debug_marker("use compute shader");
-                    cpass.dispatch_workgroups(GRID.0, GRID.1, 1);
-                }
+                state.compute.compute(&mut encoder);
+                state.render(&mut encoder, &view, self.window.as_ref().unwrap());
 
-                {
-                    let mut cpass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
-                        label: Some("Compute Pass 1"),
-                        timestamp_writes: None,
-                    });
+                let win = self.window.as_ref().unwrap();
+                let gui_screen_descriptor = egui_wgpu::ScreenDescriptor {
+                    size_in_pixels: win.inner_size().into(),
+                    pixels_per_point: win.scale_factor() as f32,
+                };  
 
-                    cpass.set_pipeline(&state.compute.copy_pipeline);
-                    cpass.set_bind_group(0, &state.compute.copy_bind_group, &[]);
-                    cpass.set_push_constants(0, bytemuck::cast_slice(&[GRID.0, GRID.1]));
-                    cpass.insert_debug_marker("copy to instance buffer");
-                    cpass.dispatch_workgroups(GRID.0, GRID.1, 1);
-                }
-
-                {
-                    let mut rpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                        label: Some("Render Pass 0"),
-                        color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                            view: &view,
-                            resolve_target: None,
-                            ops: wgpu::Operations {
-                                load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
-                                store: wgpu::StoreOp::Store,
-                            },
-                        })],
-                        depth_stencil_attachment: None,
-                        timestamp_writes: None,
-                        occlusion_query_set: None,
-                    });
-                    rpass.set_pipeline(&state.render_pipeline);
-
-                    // set vertex and instance buffers
-                    rpass.set_vertex_buffer(0, state.vertex_buffer.slice(..));
-                    rpass.set_vertex_buffer(1, state.instance_buffer.slice(..));
-
-                    // Index buffer
-                    rpass.set_index_buffer(state.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
-
-                    // pass window scale though push const.
-                    let size = <[f32; 2]>::from(self.window.as_ref().unwrap().inner_size());
-                    rpass.set_push_constants(ShaderStages::VERTEX, 0, bytemuck::cast_slice(&size));
-
-                    rpass.draw_indexed(0..state.index_len as u32, 0, 0..state.instance_len as u32);
-                }
+                state.egui_renderer.draw(
+                    &state.device,
+                    &state.queue,
+                    &mut encoder,
+                    win,
+                    &view,
+                    gui_screen_descriptor,
+                    |ctx| {
+                        egui::Window::new("window").show(&ctx, |ui| {
+                            ui.label("Speed");
+                            ui.add(egui::DragValue::new(&mut state.compute.duration));
+                            ui.label("a");
+                            ui.add(egui::DragValue::new(&mut state.compute.var[0]));
+                            ui.label("b");
+                            ui.add(egui::DragValue::new(&mut state.compute.var[1]));
+                            ui.label("g");
+                            ui.add(egui::DragValue::new(&mut state.compute.var[2]));
+                        });
+                    },
+                );
 
                 state.queue.submit(Some(encoder.finish()));
                 frame.present();
@@ -105,8 +89,8 @@ impl<'a> App<'a> {
 
                 // call update with state mut
                 self.state.as_mut().unwrap().update();
-                let time = time::Duration::from_millis(60);
-                thread::sleep(time);
+                // let time = time::Duration::from_millis(60);
+                // thread::sleep(time);
             }
 
             WindowEvent::Resized(physical_size) => {

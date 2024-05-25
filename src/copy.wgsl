@@ -1,4 +1,4 @@
-var<push_constant> grid: vec2<u32>;
+var<push_constant> grid: array<u32, 5>;
 
 struct Comp {
     state: u32,
@@ -24,7 +24,7 @@ var<storage, read_write> instances: array<InstanceInput>;
 
 
 fn get_idx(x: u32,y: u32) -> u32{
-    return x + y * grid.x;
+    return x + y * grid[0];
 }
 
 @compute

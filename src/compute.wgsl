@@ -1,4 +1,4 @@
-var<push_constant> grid: vec2<u32>;
+var<push_constant> grid: array<u32, 5>;
 
 struct Comp {
     state: u32,
@@ -11,12 +11,12 @@ struct Comp {
 var<storage, read_write> v_indices: array<Comp>; 
 
 fn get_idx(pos: vec2<u32>) -> u32{
-    return pos.x + pos.y * grid.x;
+    return pos.x + pos.y * grid[0];
 }
 
 fn check_bounds(pos: vec2<u32>) -> bool {
-    let x: bool = (pos.x < grid.x) & (pos.x >= u32(0));
-    let y: bool = (pos.y < grid.y) & (pos.y >= u32(0));
+    let x: bool = (pos.x < grid[0]) & (pos.x >= u32(0));
+    let y: bool = (pos.y < grid[1]) & (pos.y >= u32(0));
     return x & y;
 }
 
@@ -110,10 +110,10 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>){
 
         var new_state: u32 = u32(0);
         if cell.state == 0 {
-            new_state = u32(f32(ill_neigh) / 3.0) + u32(f32(uill_neigh) / 3.0);
+            new_state = u32(f32(ill_neigh) / f32(grid[2])) + u32(f32(uill_neigh) / f32(grid[3]));
         } else {
             let s = cell.state + sum_neigh;
-            new_state = u32(f32(s) / f32(ill_neigh + uill_neigh + 1)) + 28;
+            new_state = u32(f32(s) / f32(ill_neigh + uill_neigh + 1)) + grid[4];
         }
 
         if new_state > max_state {

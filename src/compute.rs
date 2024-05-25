@@ -2,8 +2,11 @@ use std::borrow::Cow;
 
 use wgpu::{
     util::DeviceExt, BindGroup, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry,
-    Buffer, ComputePipeline, Device, PushConstantRange,
+    Buffer, CommandEncoder, ComputePipeline, Device, PushConstantRange, TextureView,
 };
+
+use std::thread::sleep;
+use std::time::{Duration, Instant};
 
 use crate::renderdata::{create_grid_compute, GRID};
 
@@ -13,6 +16,9 @@ pub struct Compute {
     pub compute_buffer: Buffer,
     pub compute_bind_group: BindGroup,
     pub copy_bind_group: BindGroup,
+    pub time: Instant,
+    pub duration: u64,
+    pub var: [u32; 3],
 }
 
 impl Compute {
@@ -45,7 +51,7 @@ impl Compute {
                 }),
             ],
             push_constant_ranges: &[PushConstantRange {
-                range: 0..8,
+                range: 0..4*5,
                 stages: wgpu::ShaderStages::COMPUTE,
             }],
         });
@@ -80,7 +86,7 @@ impl Compute {
                 }),
             ],
             push_constant_ranges: &[PushConstantRange {
-                range: 0..8,
+                range: 0..4*5,
                 stages: wgpu::ShaderStages::COMPUTE,
             }],
         });
@@ -143,6 +149,41 @@ impl Compute {
             compute_buffer: buffer,
             compute_bind_group,
             copy_bind_group,
+            duration: 60,
+            time: Instant::now(),
+            var: [3,3,28],
+        }
+    }
+
+    pub fn compute(&mut self, encoder: &mut CommandEncoder) {
+        let now = Instant::now();
+        if Instant::now() - self.time >= Duration::from_millis(self.duration) {
+            {
+                let mut cpass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
+                    label: Some("Compute Pass 0"),
+                    timestamp_writes: None,
+                });
+
+                cpass.set_pipeline(&self.cs_pipeline);
+                cpass.set_bind_group(0, &self.compute_bind_group, &[]);
+                cpass.set_push_constants(0, bytemuck::cast_slice(&[GRID.0, GRID.1, self.var[0], self.var[1], self.var[2]]));
+                cpass.insert_debug_marker("use compute shader");
+                cpass.dispatch_workgroups(GRID.0, GRID.1, 1);
+            }
+
+            {
+                let mut cpass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
+                    label: Some("Compute Pass 1"),
+                    timestamp_writes: None,
+                });
+
+                cpass.set_pipeline(&self.copy_pipeline);
+                cpass.set_bind_group(0, &self.copy_bind_group, &[]);
+                cpass.set_push_constants(0, bytemuck::cast_slice(&[GRID.0, GRID.1, self.var[0], self.var[1], self.var[2]]));
+                cpass.insert_debug_marker("copy to instance buffer");
+                cpass.dispatch_workgroups(GRID.0, GRID.1, 1);
+            }
+            self.time = now;
         }
     }
 }

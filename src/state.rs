@@ -1,14 +1,14 @@
 use crate::compute::Compute;
+use crate::egui;
 
 use super::renderdata::*;
 use std::borrow::Cow;
 use std::sync::Arc;
 use wgpu::{
-    Adapter, Device, Instance, PushConstantRange, Queue, RenderPipeline, ShaderStages, Surface,
-    SurfaceConfiguration,
+    Adapter, CommandEncoder, Device, Instance, PushConstantRange, Queue, RenderPipeline,
+    ShaderStages, Surface, SurfaceConfiguration, TextureFormat, TextureView,
 };
 use winit::window::Window;
-
 pub struct State<'a> {
     pub surface: Surface<'a>,
     pub device: Device,
@@ -21,6 +21,7 @@ pub struct State<'a> {
     pub instance_buffer: wgpu::Buffer,
     pub instance_len: usize,
     pub compute: Compute,
+    pub egui_renderer: egui::EguiRenderer,
 }
 
 impl<'a> State<'a> {
@@ -52,7 +53,7 @@ impl<'a> State<'a> {
                     required_features: wgpu::Features::PUSH_CONSTANTS,
                     // Make sure we use the texture resolution limits from the adapter, so we can support images the size of the swapchain.
                     required_limits: wgpu::Limits {
-                        max_push_constant_size: 8,
+                        max_push_constant_size: 20,
                         ..wgpu::Limits::downlevel_defaults().using_resolution(adapter.limits())
                     },
                 },
@@ -65,7 +66,7 @@ impl<'a> State<'a> {
         device: &Device,
         surface: &Surface<'a>,
         adapter: &Adapter,
-    ) -> RenderPipeline {
+    ) -> (RenderPipeline, TextureFormat) {
         // Load the shaders from disk
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("main rendering shader"),
@@ -84,29 +85,32 @@ impl<'a> State<'a> {
         let swapchain_capabilities = surface.get_capabilities(&adapter);
         let swapchain_format = swapchain_capabilities.formats[0];
 
-        device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: None,
-            layout: Some(&pipeline_layout),
-            vertex: wgpu::VertexState {
-                module: &shader,
-                entry_point: "vs_main",
-                buffers: &[Vertex::desc(), InstData::desc()],
-                compilation_options: Default::default(),
-            },
-            fragment: Some(wgpu::FragmentState {
-                module: &shader,
-                entry_point: "fs_main",
-                compilation_options: Default::default(),
-                targets: &[Some(swapchain_format.into())],
+        (
+            device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                label: None,
+                layout: Some(&pipeline_layout),
+                vertex: wgpu::VertexState {
+                    module: &shader,
+                    entry_point: "vs_main",
+                    buffers: &[Vertex::desc(), InstData::desc()],
+                    compilation_options: Default::default(),
+                },
+                fragment: Some(wgpu::FragmentState {
+                    module: &shader,
+                    entry_point: "fs_main",
+                    compilation_options: Default::default(),
+                    targets: &[Some(swapchain_format.into())],
+                }),
+                primitive: wgpu::PrimitiveState {
+                    topology: wgpu::PrimitiveTopology::TriangleList,
+                    ..wgpu::PrimitiveState::default()
+                },
+                depth_stencil: None,
+                multisample: wgpu::MultisampleState::default(),
+                multiview: None,
             }),
-            primitive: wgpu::PrimitiveState {
-                topology: wgpu::PrimitiveTopology::TriangleList,
-                ..wgpu::PrimitiveState::default()
-            },
-            depth_stencil: None,
-            multisample: wgpu::MultisampleState::default(),
-            multiview: None,
-        })
+            swapchain_format,
+        )
     }
 
     pub async fn new(window: Arc<Window>) -> Self {
@@ -116,13 +120,14 @@ impl<'a> State<'a> {
 
         let instance = wgpu::Instance::default();
 
-        let surface = instance.create_surface(window).unwrap();
+        let surface = instance.create_surface(window.clone()).unwrap();
         let adapter = Self::adapter(&surface, &instance).await;
 
         // Create the logical device and command queue
         let (device, queue) = Self::device_queue(&adapter).await;
 
-        let render_pipeline = Self::config_pipeline(&device, &surface, &adapter).await;
+        let (render_pipeline, texture_format) =
+            Self::config_pipeline(&device, &surface, &adapter).await;
 
         let config = surface
             .get_default_config(&adapter, size.width, size.height)
@@ -136,6 +141,14 @@ impl<'a> State<'a> {
         let instance_len = INSTCOUNT;
         let compute = Compute::new(&device, &instance_buffer);
 
+        let egui_renderer = egui::EguiRenderer::new(
+            &device,        // wgpu Device
+            texture_format, // TextureFormat
+            None,           // this can be None
+            1,              // samples
+            window.clone(), // winit Window
+        );
+
         Self {
             surface,
             device,
@@ -148,6 +161,7 @@ impl<'a> State<'a> {
             instance_buffer,
             instance_len,
             compute,
+            egui_renderer,
         }
     }
 
@@ -157,6 +171,42 @@ impl<'a> State<'a> {
             self.config.height = new_size.height;
             self.surface.configure(&self.device, &self.config);
         }
+    }
+
+    pub fn render(
+        &mut self,
+        encoder: &mut CommandEncoder,
+        view: &TextureView,
+        window: &Arc<Window>,
+    ) {
+        let mut rpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+            label: Some("Render Pass 0"),
+            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                view: &view,
+                resolve_target: None,
+                ops: wgpu::Operations {
+                    load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
+                    store: wgpu::StoreOp::Store,
+                },
+            })],
+            depth_stencil_attachment: None,
+            timestamp_writes: None,
+            occlusion_query_set: None,
+        });
+        rpass.set_pipeline(&self.render_pipeline);
+
+        // set vertex and instance buffers
+        rpass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
+        rpass.set_vertex_buffer(1, self.instance_buffer.slice(..));
+
+        // Index buffer
+        rpass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
+
+        // pass window scale though push const.
+        let size = <[f32; 2]>::from(window.inner_size());
+        rpass.set_push_constants(ShaderStages::VERTEX, 0, bytemuck::cast_slice(&size));
+
+        rpass.draw_indexed(0..self.index_len as u32, 0, 0..self.instance_len as u32);
     }
 
     pub fn update(&mut self) {}
