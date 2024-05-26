@@ -28,10 +28,9 @@ impl<'a> State<'a> {
         let adapter = instance
                 .enumerate_adapters(wgpu::Backends::all())
                 .into_iter()
-                .filter(|adapter| {
+                .find(|adapter| {
                     adapter.is_surface_supported(surface)
                 })
-                .next()
             .expect("Failed to find an appropriate adapter");
 
         log::info!("Selected adapter: {:?}", adapter.get_info());
@@ -180,7 +179,7 @@ impl<'a> State<'a> {
         let mut rpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: Some("Render Pass 0"),
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                view: view,
+                view,
                 resolve_target: None,
                 ops: wgpu::Operations {
                     load: wgpu::LoadOp::Clear(wgpu::Color::TRANSPARENT),
