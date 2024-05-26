@@ -8,7 +8,7 @@ use wgpu::{
 
 use std::time::{Duration, Instant};
 
-use crate::renderdata::{create_grid_compute};
+use crate::renderdata::create_grid_compute;
 use crate::settings::*;
 
 pub struct Compute {

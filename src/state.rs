@@ -5,7 +5,7 @@ use super::renderdata::*;
 use std::borrow::Cow;
 use std::sync::Arc;
 use wgpu::{
-    Adapter, Backend, CommandEncoder, Device, Features, Instance, PushConstantRange, Queue, RenderPipeline, ShaderStages, Surface, SurfaceCapabilities, SurfaceConfiguration, TextureFormat, TextureView
+    Adapter, CommandEncoder, Device, Instance, PushConstantRange, Queue, RenderPipeline, ShaderStages, Surface, SurfaceConfiguration, TextureFormat, TextureView
 };
 use winit::window::Window;
 pub struct State<'a> {
@@ -127,7 +127,7 @@ impl<'a> State<'a> {
         let (render_pipeline, texture_format) =
             Self::config_pipeline(&device, &surface, &adapter).await;
 
-        let mut config = surface
+        let config = surface
             .get_default_config(&adapter, size.width, size.height)
             .unwrap();
 
