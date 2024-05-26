@@ -5,6 +5,7 @@ mod compute;
 mod egui;
 mod renderdata;
 mod state;
+mod settings;
 
 pub fn main() {
     env_logger::init();

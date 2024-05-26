@@ -1,11 +1,9 @@
 use std::sync::Arc;
-
-use egui::Grid;
 use winit::event::{Event, WindowEvent};
 use winit::event_loop::{EventLoop, EventLoopWindowTarget};
 use winit::window::Window;
 
-use super::state::*;
+use super::state::State;
 
 #[derive(Default)]
 pub struct App<'a> {
@@ -64,7 +62,7 @@ impl<'a> App<'a> {
                     gui_screen_descriptor,
                     |ctx| {
                         egui::Window::new("Settings").show(&ctx, |ui| {
-                            ui.label(format!("Grid Size: {:?}", (crate::renderdata::GRID.0,crate::renderdata::GRID.1)));
+                            ui.label(format!("Grid Size: {:?}", (crate::settings::GRID.0,crate::settings::GRID.1)));
                             ui.label(format!("Simulation Step: {}", state.compute.sim_step));
                             ui.horizontal(|ui| {
                             ui.label("Speed");

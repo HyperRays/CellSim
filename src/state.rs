@@ -1,4 +1,4 @@
-use crate::compute::Compute;
+use crate::{compute::Compute, settings::*};
 use crate::egui;
 
 use super::renderdata::*;

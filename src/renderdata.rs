@@ -1,6 +1,8 @@
 use rand::Rng;
 use wgpu::{util::DeviceExt, Buffer, Device};
 
+use crate::settings::*;
+
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Vertex {
@@ -67,11 +69,6 @@ pub const VERTICES: &[Vertex] = &[
         position: [0.0, -1.0, 0.0],
     },
 ];
-
-pub const INDICES: &[u32] = &[0, 1, 2, 0, 2, 3];
-pub const GRID: (u32, u32) = (1000, 1000);
-pub const SIZE: f32 = 2.0;
-pub const INSTCOUNT: usize = (GRID.0 * GRID.1) as usize;
 
 pub fn create_grid(grid: (u32, u32), size: f32) -> Vec<InstData> {
     let mut tmp: Vec<InstData> = Vec::new();
