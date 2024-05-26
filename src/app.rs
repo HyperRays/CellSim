@@ -13,7 +13,7 @@ pub struct App<'a> {
 
 impl<'a> App<'a> {
     async fn resumed(&mut self) {
-        self.state = Some(State::new((&self).window.as_ref().unwrap().clone()).await);
+        self.state = Some(State::new(self.window.as_ref().unwrap().clone()).await);
     }
 
     fn window_event(&mut self, event: WindowEvent, event_loop: &EventLoopWindowTarget<()>) {
@@ -61,7 +61,7 @@ impl<'a> App<'a> {
                     &view,
                     gui_screen_descriptor,
                     |ctx| {
-                        egui::Window::new("Settings").show(&ctx, |ui| {
+                        egui::Window::new("Settings").show(ctx, |ui| {
                             ui.label(format!("Grid Size: {:?}", (crate::settings::GRID.0,crate::settings::GRID.1)));
                             ui.label(format!("Simulation Step: {}", state.compute.sim_step));
                             ui.horizontal(|ui| {
@@ -85,7 +85,7 @@ impl<'a> App<'a> {
                             }
                         });
 
-                        egui::Window::new("Presets").show(&ctx, |ui| {
+                        egui::Window::new("Presets").show(ctx, |ui| {
                             if ui.add(egui::Button::new("Preset 1")).clicked() {
                                 state.compute.var = [3,3,28];
                             }
@@ -134,7 +134,7 @@ impl<'a> App<'a> {
                 event,
             } = event
             {
-                self.window_event(event, &target);
+                self.window_event(event, target);
             }
         });
     }

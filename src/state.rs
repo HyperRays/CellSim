@@ -29,7 +29,7 @@ impl<'a> State<'a> {
                 .enumerate_adapters(wgpu::Backends::all())
                 .into_iter()
                 .filter(|adapter| {
-                    adapter.is_surface_supported(&surface)
+                    adapter.is_surface_supported(surface)
                 })
                 .next()
             .expect("Failed to find an appropriate adapter");
@@ -79,7 +79,7 @@ impl<'a> State<'a> {
             }],
         });
 
-        let swapchain_capabilities = surface.get_capabilities(&adapter);
+        let swapchain_capabilities = surface.get_capabilities(adapter);
         let swapchain_format = swapchain_capabilities.formats[0];
 
         (
@@ -180,7 +180,7 @@ impl<'a> State<'a> {
         let mut rpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: Some("Render Pass 0"),
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                view: &view,
+                view: view,
                 resolve_target: None,
                 ops: wgpu::Operations {
                     load: wgpu::LoadOp::Clear(wgpu::Color::TRANSPARENT),

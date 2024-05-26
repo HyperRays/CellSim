@@ -147,7 +147,7 @@ impl Compute {
 
         Self {
             cs_pipeline: compute_pipeline,
-            copy_pipeline: copy_pipeline,
+            copy_pipeline,
             compute_buffer: buffer,
             compute_bind_group,
             copy_bind_group,
