@@ -5,8 +5,7 @@ use super::renderdata::*;
 use std::borrow::Cow;
 use std::sync::Arc;
 use wgpu::{
-    Adapter, CommandEncoder, Device, Instance, PushConstantRange, Queue, RenderPipeline,
-    ShaderStages, Surface, SurfaceConfiguration, TextureFormat, TextureView,
+    Adapter, Backend, CommandEncoder, Device, Features, Instance, PushConstantRange, Queue, RenderPipeline, ShaderStages, Surface, SurfaceCapabilities, SurfaceConfiguration, TextureFormat, TextureView
 };
 use winit::window::Window;
 pub struct State<'a> {
@@ -27,13 +26,12 @@ pub struct State<'a> {
 impl<'a> State<'a> {
     async fn adapter(surface: &Surface<'a>, instance: &Instance) -> Adapter {
         let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions {
-                power_preference: wgpu::PowerPreference::default(),
-                force_fallback_adapter: false,
-                // Request an adapter which can render to our surface
-                compatible_surface: Some(surface),
-            })
-            .await
+                .enumerate_adapters(wgpu::Backends::all())
+                .into_iter()
+                .filter(|adapter| {
+                    adapter.is_surface_supported(&surface)
+                })
+                .next()
             .expect("Failed to find an appropriate adapter");
 
         log::info!("Selected adapter: {:?}", adapter.get_info());
@@ -46,8 +44,7 @@ impl<'a> State<'a> {
     }
 
     async fn device_queue(adapter: &Adapter) -> (Device, Queue) {
-        adapter
-            .request_device(
+        adapter.request_device(
                 &wgpu::DeviceDescriptor {
                     label: None,
                     required_features: wgpu::Features::PUSH_CONSTANTS,
@@ -77,8 +74,8 @@ impl<'a> State<'a> {
             label: None,
             bind_group_layouts: &[],
             push_constant_ranges: &[PushConstantRange {
-                range: 0..8,
-                stages: ShaderStages::VERTEX,
+                range: 0..4 * 3,
+                stages: ShaderStages::VERTEX ,
             }],
         });
 
@@ -122,6 +119,7 @@ impl<'a> State<'a> {
 
         let surface = instance.create_surface(window.clone()).unwrap();
         let adapter = Self::adapter(&surface, &instance).await;
+        log::debug!("{:?}",surface.get_capabilities(&adapter));
 
         // Create the logical device and command queue
         let (device, queue) = Self::device_queue(&adapter).await;
@@ -129,11 +127,11 @@ impl<'a> State<'a> {
         let (render_pipeline, texture_format) =
             Self::config_pipeline(&device, &surface, &adapter).await;
 
-        let config = surface
+        let mut config = surface
             .get_default_config(&adapter, size.width, size.height)
             .unwrap();
-        surface.configure(&device, &config);
 
+        surface.configure(&device, &config);
         let vertex_buffer = create_vb(&device);
         let index_buffer = create_idx(&device);
         let index_len = INDICES.len();
@@ -185,7 +183,7 @@ impl<'a> State<'a> {
                 view: &view,
                 resolve_target: None,
                 ops: wgpu::Operations {
-                    load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
+                    load: wgpu::LoadOp::Clear(wgpu::Color::TRANSPARENT),
                     store: wgpu::StoreOp::Store,
                 },
             })],
@@ -204,7 +202,7 @@ impl<'a> State<'a> {
 
         // pass window scale though push const.
         let size = <[f32; 2]>::from(window.inner_size());
-        rpass.set_push_constants(ShaderStages::VERTEX, 0, bytemuck::cast_slice(&size));
+        rpass.set_push_constants(ShaderStages::VERTEX, 0, bytemuck::cast_slice(&[size[0],size[1],SIZE]));
 
         rpass.draw_indexed(0..self.index_len as u32, 0, 0..self.instance_len as u32);
     }

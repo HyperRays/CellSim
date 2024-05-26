@@ -1,5 +1,5 @@
 use rand::Rng;
-use wgpu::{util::DeviceExt, Buffer, Device, Queue};
+use wgpu::{util::DeviceExt, Buffer, Device};
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
@@ -69,8 +69,8 @@ pub const VERTICES: &[Vertex] = &[
 ];
 
 pub const INDICES: &[u32] = &[0, 1, 2, 0, 2, 3];
-pub const GRID: (u32, u32) = (100, 100);
-pub const SIZE: f32 = 20.0;
+pub const GRID: (u32, u32) = (1000, 1000);
+pub const SIZE: f32 = 2.0;
 pub const INSTCOUNT: usize = (GRID.0 * GRID.1) as usize;
 
 pub fn create_grid(grid: (u32, u32), size: f32) -> Vec<InstData> {

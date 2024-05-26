@@ -59,6 +59,11 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>){
         var uill_neigh: u32 = u32(0);
         var sum_neigh: u32 = u32(0);
 
+        // Due to any array in wgsl defined in the shader needing
+        // to be indexed by a constant, the loop must be manually unrolled
+        // using a funtion also not possible, as the function inputs 
+        // are interpreted as variable
+
         if in_bounds[0] { 
             let neigh_val = v_indices[get_idx(neighbors[0])].state;
             ill_neigh += u32((neigh_val > 0) && (neigh_val < max_state)); 

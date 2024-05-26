@@ -1,5 +1,3 @@
-use std::time::Instant;
-
 use winit::event_loop::{ControlFlow, EventLoop};
 
 mod app;
@@ -15,7 +13,7 @@ pub fn main() {
     // ControlFlow::Poll continuously runs the event loop, even if the OS hasn't
     // dispatched any events. This is ideal for games and similar applications.
     event_loop.set_control_flow(ControlFlow::Poll);
-    let builder = winit::window::WindowBuilder::new();
+    let builder = winit::window::WindowBuilder::new().with_transparent(true);
     let window = builder.build(&event_loop).unwrap();
 
     let app = app::App::default();

@@ -1,14 +1,9 @@
-use bytemuck::bytes_of;
-use std::borrow::{BorrowMut, Cow};
 use std::sync::Arc;
-use std::{thread, time};
-use wgpu::ShaderStages;
 
+use egui::Grid;
 use winit::event::{Event, WindowEvent};
-use winit::event_loop::{self, EventLoop, EventLoopWindowTarget};
-use winit::window::{Window, WindowId};
-
-use crate::renderdata::GRID;
+use winit::event_loop::{EventLoop, EventLoopWindowTarget};
+use winit::window::Window;
 
 use super::state::*;
 
@@ -16,9 +11,7 @@ use super::state::*;
 pub struct App<'a> {
     pub window: Option<Arc<Window>>,
     pub state: Option<State<'a>>,
-    counter: i32,
 }
-
 
 impl<'a> App<'a> {
     async fn resumed(&mut self) {
@@ -60,7 +53,7 @@ impl<'a> App<'a> {
                 let gui_screen_descriptor = egui_wgpu::ScreenDescriptor {
                     size_in_pixels: win.inner_size().into(),
                     pixels_per_point: win.scale_factor() as f32,
-                };  
+                };
 
                 state.egui_renderer.draw(
                     &state.device,
@@ -70,18 +63,42 @@ impl<'a> App<'a> {
                     &view,
                     gui_screen_descriptor,
                     |ctx| {
-                        egui::Window::new("window").show(&ctx, |ui| {
+                        egui::Window::new("Settings").show(&ctx, |ui| {
+                            ui.label(format!("Grid Size: {:?}", (crate::renderdata::GRID.0,crate::renderdata::GRID.1)));
+                            ui.label(format!("Simulation Step: {}", state.compute.sim_step));
+                            ui.horizontal(|ui| {
                             ui.label("Speed");
                             ui.add(egui::DragValue::new(&mut state.compute.duration));
-                            ui.label("a");
-                            ui.add(egui::DragValue::new(&mut state.compute.var[0]));
-                            ui.label("b");
-                            ui.add(egui::DragValue::new(&mut state.compute.var[1]));
-                            ui.label("g");
-                            ui.add(egui::DragValue::new(&mut state.compute.var[2]));
+                            });
+                            ui.horizontal(|ui| {
+                                ui.label("a");
+                                ui.add(egui::DragValue::new(&mut state.compute.var[0]));
+                            });
+                            ui.horizontal(|ui| {
+                                ui.label("b");
+                                ui.add(egui::DragValue::new(&mut state.compute.var[1]));
+                            });
+                            ui.horizontal(|ui| {
+                                ui.label("g");
+                                ui.add(egui::DragValue::new(&mut state.compute.var[2]));
+                            });
                             if ui.add(egui::Button::new("Reset")).clicked() {
                                 state.compute.reset(&state.queue);
                             }
+                        });
+
+                        egui::Window::new("Presets").show(&ctx, |ui| {
+                            if ui.add(egui::Button::new("Preset 1")).clicked() {
+                                state.compute.var = [3,3,28];
+                            }
+                            if ui.add(egui::Button::new("Preset 2")).clicked() {
+                                state.compute.var = [2,6,28];
+                            }
+                            if ui.add(egui::Button::new("Preset 3")).clicked() {
+                                state.compute.duration = 0;
+                                state.compute.var = [1,1,1];
+                            }
+
                         });
                     },
                 );

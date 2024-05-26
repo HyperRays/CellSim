@@ -1,13 +1,11 @@
 use std::borrow::Cow;
 
-use wgpu::core::device;
 use wgpu::Queue;
 use wgpu::{
-    util::DeviceExt, BindGroup, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry,
-    Buffer, CommandEncoder, ComputePipeline, Device, PushConstantRange, TextureView,
+    util::DeviceExt, BindGroup, BindGroupLayoutDescriptor, BindGroupLayoutEntry, Buffer,
+    CommandEncoder, ComputePipeline, Device, PushConstantRange,
 };
 
-use std::thread::sleep;
 use std::time::{Duration, Instant};
 
 use crate::renderdata::{create_grid_compute, GRID};
@@ -21,6 +19,7 @@ pub struct Compute {
     pub time: Instant,
     pub duration: u64,
     pub var: [u32; 3],
+    pub sim_step: u32,
 }
 
 impl Compute {
@@ -53,7 +52,7 @@ impl Compute {
                 }),
             ],
             push_constant_ranges: &[PushConstantRange {
-                range: 0..4*5,
+                range: 0..4 * 5,
                 stages: wgpu::ShaderStages::COMPUTE,
             }],
         });
@@ -88,7 +87,7 @@ impl Compute {
                 }),
             ],
             push_constant_ranges: &[PushConstantRange {
-                range: 0..4*5,
+                range: 0..4 * 5,
                 stages: wgpu::ShaderStages::COMPUTE,
             }],
         });
@@ -153,7 +152,8 @@ impl Compute {
             copy_bind_group,
             duration: 60,
             time: Instant::now(),
-            var: [3,3,28],
+            var: [3, 3, 28],
+            sim_step: 0,
         }
     }
 
@@ -168,7 +168,10 @@ impl Compute {
 
                 cpass.set_pipeline(&self.cs_pipeline);
                 cpass.set_bind_group(0, &self.compute_bind_group, &[]);
-                cpass.set_push_constants(0, bytemuck::cast_slice(&[GRID.0, GRID.1, self.var[0], self.var[1], self.var[2]]));
+                cpass.set_push_constants(
+                    0,
+                    bytemuck::cast_slice(&[GRID.0, GRID.1, self.var[0], self.var[1], self.var[2]]),
+                );
                 cpass.insert_debug_marker("use compute shader");
                 cpass.dispatch_workgroups(GRID.0, GRID.1, 1);
             }
@@ -181,15 +184,24 @@ impl Compute {
 
                 cpass.set_pipeline(&self.copy_pipeline);
                 cpass.set_bind_group(0, &self.copy_bind_group, &[]);
-                cpass.set_push_constants(0, bytemuck::cast_slice(&[GRID.0, GRID.1, self.var[0], self.var[1], self.var[2]]));
+                cpass.set_push_constants(
+                    0,
+                    bytemuck::cast_slice(&[GRID.0, GRID.1, self.var[0], self.var[1], self.var[2]]),
+                );
                 cpass.insert_debug_marker("copy to instance buffer");
                 cpass.dispatch_workgroups(GRID.0, GRID.1, 1);
             }
             self.time = now;
+            self.sim_step += 1;
         }
     }
 
-    pub fn reset(&self,queue: &Queue) {
-        queue.write_buffer(&self.compute_buffer, 0, bytemuck::cast_slice(&create_grid_compute(GRID)));
-    }   
+    pub fn reset(&mut self, queue: &Queue) {
+        queue.write_buffer(
+            &self.compute_buffer,
+            0,
+            bytemuck::cast_slice(&create_grid_compute(GRID)),
+        );
+        self.sim_step = 0;
+    }
 }
