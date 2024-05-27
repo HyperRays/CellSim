@@ -115,10 +115,10 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>){
 
         var new_state: u32 = u32(0);
         if cell.state == 0 {
-            new_state = u32(f32(ill_neigh) / f32(grid[2])) + u32(f32(uill_neigh) / f32(grid[3]));
+            new_state = u32(f32(ill_neigh) / 3.0) + u32(f32(uill_neigh) / 3.0);
         } else {
             let s = cell.state + sum_neigh;
-            new_state = u32(f32(s) / f32(ill_neigh + uill_neigh + 1)) + grid[4];
+            new_state = u32(f32(s) / f32(ill_neigh + uill_neigh + 1)) + u32(grid[4]);
         }
 
         if new_state > max_state {
