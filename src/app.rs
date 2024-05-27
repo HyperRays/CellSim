@@ -89,14 +89,6 @@ impl<'a> App<'a> {
                             if ui.add(egui::Button::new("Preset 1")).clicked() {
                                 state.compute.var = [3,3,28];
                             }
-                            if ui.add(egui::Button::new("Preset 2")).clicked() {
-                                state.compute.var = [2,6,28];
-                            }
-                            if ui.add(egui::Button::new("Preset 3")).clicked() {
-                                state.compute.duration = 0;
-                                state.compute.var = [1,1,1];
-                            }
-
                         });
                     },
                 );
