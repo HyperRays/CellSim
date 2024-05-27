@@ -1,4 +1,4 @@
-# B-Z Reaction Simulation
+# B-Z Reaction Cellular Automata
 
 ## Overview
 
