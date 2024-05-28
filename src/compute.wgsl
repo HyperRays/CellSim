@@ -1,3 +1,5 @@
+
+// 0,1: GRID, 2,3,4: a,b, g
 var<push_constant> grid: array<u32, 5>;
 
 struct Comp {
@@ -49,8 +51,6 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>){
                                         check_bounds(neighbors[6]), 
                                         check_bounds(neighbors[7]));
 
-
-    // v_indices[idx].copy = cell.state;
 
     if cell.state == max_state {
         v_indices[idx].copy = u32(0); 
@@ -126,7 +126,6 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>){
         }
         
         v_indices[idx].copy = new_state;
-        v_indices[idx]._pad.x = ill_neigh;
 
     }
 }
