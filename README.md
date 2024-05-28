@@ -4,7 +4,8 @@
 
 The B-Z Reaction Simulation project models the Belousov-Zhabotinsky reaction using cellular automata. This project leverages GPU compute shaders with `wgpu` to produce spiral wave patterns similar to those seen in the actual B-Z reaction. The B-Z reaction is a fascinating example of a chemical oscillator, oscillating between oxidized and reduced states, and producing beautiful patterns when done in a thin fluid layer.
 
-![image](https://github.com/HyperRays/CellSim/assets/107126915/3251eace-4fd4-463d-a1e4-dce00b53b222)
+<img src="https://github.com/HyperRays/CellSim/assets/107126915/42a56da3-5605-4fde-94b4-69a8c6920e6d" width=400/>
+<img src="https://github.com/HyperRays/CellSim/assets/107126915/9bbc62de-a638-4493-b574-f7f4390f88b3" width=400/>
 
 ## Features
 
