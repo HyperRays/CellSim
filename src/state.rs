@@ -1,12 +1,14 @@
-use crate::{compute::Compute, settings::*};
 use crate::egui;
+use crate::settings::*;
 
 use super::renderdata::*;
 use std::borrow::Cow;
 use std::sync::Arc;
 use wgpu::{
-    Adapter, CommandEncoder, Device, Instance, PushConstantRange, Queue, RenderPipeline, ShaderStages, Surface, SurfaceConfiguration, TextureFormat, TextureView
+    Adapter, CommandEncoder, Device, Instance, PushConstantRange, Queue, RenderPipeline,
+    ShaderStages, Surface, SurfaceConfiguration, TextureFormat, TextureView,
 };
+
 use winit::window::Window;
 pub struct State<'a> {
     pub surface: Surface<'a>,
@@ -19,18 +21,16 @@ pub struct State<'a> {
     pub index_len: usize,
     pub instance_buffer: wgpu::Buffer,
     pub instance_len: usize,
-    pub compute: Compute,
+    // pub compute: Compute,
     pub egui_renderer: egui::EguiRenderer,
 }
 
 impl<'a> State<'a> {
     async fn adapter(surface: &Surface<'a>, instance: &Instance) -> Adapter {
         let adapter = instance
-                .enumerate_adapters(wgpu::Backends::all())
-                .into_iter()
-                .find(|adapter| {
-                    adapter.is_surface_supported(surface)
-                })
+            .enumerate_adapters(wgpu::Backends::all())
+            .into_iter()
+            .find(|adapter| adapter.is_surface_supported(surface))
             .expect("Failed to find an appropriate adapter");
 
         log::info!("Selected adapter: {:?}", adapter.get_info());
@@ -43,7 +43,8 @@ impl<'a> State<'a> {
     }
 
     async fn device_queue(adapter: &Adapter) -> (Device, Queue) {
-        adapter.request_device(
+        adapter
+            .request_device(
                 &wgpu::DeviceDescriptor {
                     label: None,
                     required_features: wgpu::Features::PUSH_CONSTANTS,
@@ -74,7 +75,7 @@ impl<'a> State<'a> {
             bind_group_layouts: &[],
             push_constant_ranges: &[PushConstantRange {
                 range: 0..4 * 3,
-                stages: ShaderStages::VERTEX ,
+                stages: ShaderStages::VERTEX,
             }],
         });
 
@@ -118,7 +119,7 @@ impl<'a> State<'a> {
 
         let surface = instance.create_surface(window.clone()).unwrap();
         let adapter = Self::adapter(&surface, &instance).await;
-        log::debug!("{:?}",surface.get_capabilities(&adapter));
+        log::debug!("{:?}", surface.get_capabilities(&adapter));
 
         // Create the logical device and command queue
         let (device, queue) = Self::device_queue(&adapter).await;
@@ -136,7 +137,6 @@ impl<'a> State<'a> {
         let index_len = INDICES.len();
         let instance_buffer = create_inst(&device);
         let instance_len = INSTCOUNT;
-        let compute = Compute::new(&device, &instance_buffer);
 
         let egui_renderer = egui::EguiRenderer::new(
             &device,        // wgpu Device
@@ -157,7 +157,7 @@ impl<'a> State<'a> {
             index_len,
             instance_buffer,
             instance_len,
-            compute,
+            // compute,
             egui_renderer,
         }
     }
@@ -201,7 +201,11 @@ impl<'a> State<'a> {
 
         // pass window scale though push const.
         let size = <[f32; 2]>::from(window.inner_size());
-        rpass.set_push_constants(ShaderStages::VERTEX, 0, bytemuck::cast_slice(&[size[0],size[1],SIZE]));
+        rpass.set_push_constants(
+            ShaderStages::VERTEX,
+            0,
+            bytemuck::cast_slice(&[size[0], size[1], SIZE]),
+        );
 
         rpass.draw_indexed(0..self.index_len as u32, 0, 0..self.instance_len as u32);
     }

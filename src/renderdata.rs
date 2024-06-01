@@ -73,12 +73,13 @@ pub const VERTICES: &[Vertex] = &[
 pub fn create_grid(grid: (u32, u32), size: f32) -> Vec<InstData> {
     let mut tmp: Vec<InstData> = Vec::new();
     tmp.reserve_exact((grid.0 * grid.1) as usize);
+    let mut rng = rand::thread_rng();
 
     for x in 0..grid.0 {
         for y in 0..grid.1 {
             tmp.push(InstData {
                 position: [x as f32 * size, y as f32 * -size, 0.0],
-                color: [0.0, 0.0, 0.0],
+                color: rng.gen(),
                 scale: size,
                 _pad: 0,
             })

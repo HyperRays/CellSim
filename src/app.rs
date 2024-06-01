@@ -44,7 +44,7 @@ impl<'a> App<'a> {
                     .device
                     .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
 
-                state.compute.compute(&mut encoder);
+                // state.compute.compute(&mut encoder);
                 state.render(&mut encoder, &view, self.window.as_ref().unwrap());
 
                 let win = self.window.as_ref().unwrap();
@@ -62,34 +62,13 @@ impl<'a> App<'a> {
                     gui_screen_descriptor,
                     |ctx| {
                         egui::Window::new("Settings").show(ctx, |ui| {
-                            ui.label(format!("Grid Size: {:?}", (crate::settings::GRID.0,crate::settings::GRID.1)));
-                            ui.label(format!("Simulation Step: {}", state.compute.sim_step));
-                            ui.horizontal(|ui| {
-                            ui.label("Speed");
-                            ui.add(egui::DragValue::new(&mut state.compute.duration));
-                            });
-                            ui.horizontal(|ui| {
-                                ui.label("a");
-                                ui.add(egui::DragValue::new(&mut state.compute.var[0]));
-                            });
-                            ui.horizontal(|ui| {
-                                ui.label("b");
-                                ui.add(egui::DragValue::new(&mut state.compute.var[1]));
-                            });
-                            ui.horizontal(|ui| {
-                                ui.label("g");
-                                ui.add(egui::DragValue::new(&mut state.compute.var[2]));
-                            });
-                            if ui.add(egui::Button::new("Reset")).clicked() {
-                                state.compute.reset(&state.queue);
-                            }
+                            ui.label(format!(
+                                "Grid Size: {:?}",
+                                (crate::settings::GRID.0, crate::settings::GRID.1)
+                            ));
                         });
 
-                        egui::Window::new("Presets").show(ctx, |ui| {
-                            if ui.add(egui::Button::new("Preset 1")).clicked() {
-                                state.compute.var = [3,3,28];
-                            }
-                        });
+                        egui::Window::new("Presets").show(ctx, |ui| {});
                     },
                 );
 
