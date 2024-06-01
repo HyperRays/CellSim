@@ -115,6 +115,7 @@ pub fn create_vb(device: &Device) -> Buffer {
     })
 }
 
+pub const INDICES: &[u32] = &[0, 1, 2, 0, 2, 3];
 pub fn create_idx(device: &Device) -> Buffer {
     device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
         label: Some("Index Buffer"),
